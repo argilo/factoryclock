@@ -21,20 +21,23 @@ import threading
 import time
 import RPi.GPIO as GPIO
 
-PULSE_ON_LEN = 0.100
-PULSE_OFF_LEN = 0.100
+PULSE_ON_LEN = 0.150
+PULSE_OFF_LEN = 0.250
+
+POSITIVE = 4
+NEGATIVE = 17
 
 pulse_lock = threading.Lock()
 stop_flag = False
 
 
-def pulse():
+def pulse(pin):
     pulse_lock.acquire()
 
-    GPIO.output(4, GPIO.HIGH)
+    GPIO.output(pin, GPIO.HIGH)
     time.sleep(PULSE_ON_LEN)
 
-    GPIO.output(4, GPIO.LOW)
+    GPIO.output(pin, GPIO.LOW)
     time.sleep(PULSE_OFF_LEN)
 
     pulse_lock.release()
@@ -48,18 +51,18 @@ def next_minute():
 def button_loop(next_min):
     while next_min - time.time() > 2:
         while next_min - time.time() > 2 and GPIO.input(12) == GPIO.LOW:
-            pulse()
+            pulse(POSITIVE)
 
         if next_min - time.time() > 2:
             channel = GPIO.wait_for_edge(12, GPIO.FALLING, timeout=1000)
             if channel is not None:
-                pulse()
+                pulse(POSITIVE)
 
 
 def minute_loop(sch):
     local = time.localtime()
     print(local.tm_hour, local.tm_min)
-    pulse()
+    pulse(POSITIVE)
     next_min = next_minute()
     sch.enterabs(next_min, 1, minute_loop, (sch,))
     button_loop(next_min)
